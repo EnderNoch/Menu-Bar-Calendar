@@ -43,12 +43,14 @@ final class Events {
         }
     }
 
-    /// All-day events first, then the rest by start time, like Calendar's day view.
+    /// All-day events first, then the rest by start time, like Calendar's day view. Invitations
+    /// you declined are left out, as Calendar leaves them out unless View → Show Declined
+    /// Events is on.
     func events(from start: Date, to end: Date) -> [EKEvent] {
         _ = version
         guard allowed else { return [] }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
-        return store.events(matching: predicate).sorted {
+        return store.events(matching: predicate).filter { !$0.declinedByMe }.sorted {
             ($0.isAllDay ? 0 : 1, $0.startDate) < ($1.isAllDay ? 0 : 1, $1.startDate)
         }
     }
@@ -79,9 +81,10 @@ extension EKEvent {
     /// "all-day" or "9:00–10:30", in the system's time format.
     var timeText: String {
         if isAllDay { return sys("all-day") }
-        let f = DateIntervalFormatter()
-        f.dateStyle = .none
-        f.timeStyle = .short
-        return f.string(from: startDate, to: endDate)
+        return DateIntervalFormatter(date: .none, time: .short).string(from: startDate, to: endDate)
+    }
+
+    var declinedByMe: Bool {
+        attendees?.contains { $0.isCurrentUser && $0.participantStatus == .declined } ?? false
     }
 }

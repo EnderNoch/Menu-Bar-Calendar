@@ -5,9 +5,8 @@ import SwiftUI
 let appName = Bundle.main.localizedInfoDictionary?["CFBundleDisplayName"] as? String
     ?? Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String ?? "Menu Bar Calendar"
 
-/// The calendar of System Settings: its first day of the week, its week numbers, and it
-/// follows changes made there while the app runs.
-let cal = Calendar.autoupdatingCurrent
+/// The calendar of System Settings, starting the week where Calendar's settings say.
+var cal: Calendar { Model.shared.calendar }
 
 /// Lives only in the menu bar, like the clock: no window and no Dock icon.
 @main
@@ -45,7 +44,7 @@ struct MenuBarLabel: View {
 
     var body: some View {
         Image(systemName: "calendar")
-            .accessibilityLabel(appName + ", " + model.today.formatted(date: .complete, time: .omitted))
+            .accessibilityLabel(appName + ", " + model.today.formatted(dateStyle.weekday(.wide).day().month(.wide).year()))
     }
 }
 

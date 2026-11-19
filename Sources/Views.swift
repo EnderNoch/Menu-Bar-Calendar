@@ -59,7 +59,7 @@ struct Panel: View {
             }
         }
         .padding()
-        .frame(width: 360)
+        .frame(width: 380)
         // ⌘1 to ⌘4 switch the view, as in Calendar.
         .background {
             ForEach(Scope.allCases) { scope in
@@ -71,6 +71,7 @@ struct Panel: View {
         }
         // Each time the panel opens it starts at today, like Calendar on launch.
         .onAppear {
+            model.refreshSettings()
             model.goToday(animated: false)
             events.refresh()
         }
@@ -126,20 +127,30 @@ struct PressStyle: ButtonStyle {
 }
 
 /// The week's number beside the month, as Calendar shows it with week numbers on; pressed,
-/// it gets the circle too.
+/// it gets the circle too. The year view's months use a small one.
 struct WeekNumber: View {
     let day: Date
+    var small = false
     @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
         let pressed = prominence == .increased
         Text("\(cal.component(.weekOfYear, from: day))")
-            .font(.caption2.weight(pressed ? .semibold : .regular))
+            .font(small ? .system(size: 7, weight: pressed ? .semibold : .regular)
+                        : .caption2.weight(pressed ? .semibold : .regular))
             .monospacedDigit()
             .foregroundStyle(pressed ? AnyShapeStyle(.white) : AnyShapeStyle(.tertiary))
-            .frame(width: 20, height: 20)
+            .frame(width: small ? 12 : 20, height: small ? 12 : 20)
             .background { if pressed { Circle().fill(.tint) } }
-            .frame(width: 22, height: 26)
+            .frame(width: small ? 12 : 22, height: small ? 14 : 26)
+    }
+}
+
+extension View {
+    /// Saturday and Sunday (the weekend of the system's region) on a shaded band, as Calendar
+    /// shades them in its week and month views.
+    func weekend(_ on: Bool) -> some View {
+        background { if on { Rectangle().fill(.fill.tertiary) } }
     }
 }
 
@@ -147,13 +158,17 @@ struct WeekNumber: View {
 
 struct YearView: View {
     private let model = Model.shared
+    private let events = Events.shared
 
     var body: some View {
-        let start = cal.dateInterval(of: .year, for: model.date)!.start
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3),
+        let year = cal.dateInterval(of: .year, for: model.date)!
+        let start = year.start
+        // A dot under days with events when Calendar shows events in its year view.
+        let dots = model.settings.yearEvents && events.allowed ? events.colors(from: year.start, to: year.end) : nil
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 3),
                   spacing: 12) {
             ForEach(0..<12, id: \.self) { i in
-                MiniMonth(month: cal.date(byAdding: .month, value: i, to: start)!)
+                MiniMonth(month: cal.date(byAdding: .month, value: i, to: start)!, dots: dots)
             }
         }
     }
@@ -162,6 +177,7 @@ struct YearView: View {
 /// One month of the year view: its name opens it in the month view, a day in the day view.
 struct MiniMonth: View {
     let month: Date
+    let dots: [Date: [Color]]?
     private let model = Model.shared
 
     var body: some View {
@@ -169,7 +185,7 @@ struct MiniMonth: View {
         let current = cal.isDate(month, equalTo: model.today, toGranularity: .month)
         VStack(alignment: .leading, spacing: 3) {
             Button { model.show(month, in: .month) } label: {
-                Text(month.formatted(.dateTime.month(.wide)))
+                Text(month.formatted(dateStyle.month(.wide)))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(current ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
             }
@@ -177,31 +193,69 @@ struct MiniMonth: View {
 
             Grid(horizontalSpacing: 0, verticalSpacing: 0) {
                 GridRow {
+                    if model.settings.weekNumbers { Color.clear.frame(width: 1, height: 1) }
                     ForEach(Array(weekdaySymbols(cal.veryShortStandaloneWeekdaySymbols).enumerated()), id: \.offset) {
                         Text($0.element)
                             .font(.system(size: 8))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
+                            .weekend(cal.isDateInWeekend(days[$0.offset]))
                     }
                 }
                 ForEach(0..<6, id: \.self) { row in
-                    GridRow {
-                        ForEach(0..<7, id: \.self) { col in
-                            let day = days[row * 7 + col]
-                            if cal.isDate(day, equalTo: month, toGranularity: .month) {
-                                Button { model.show(day, in: .day) } label: {
-                                    DayNumber(day: day, size: 9, circle: 14)
-                                        .frame(maxWidth: .infinity)
+                    GridRow(alignment: .top) {
+                        // Week numbers when Calendar shows them, a click away from the week
+                        // view; none beside a row that holds no day of this month.
+                        if model.settings.weekNumbers {
+                            if days[(row * 7)..<(row * 7 + 7)].contains(where: { cal.isDate($0, equalTo: month, toGranularity: .month) }) {
+                                Button { model.show(days[row * 7], in: .week) } label: {
+                                    WeekNumber(day: days[row * 7], small: true)
                                 }
                                 .buttonStyle(PressStyle())
                             } else {
-                                Color.clear.frame(height: 14)
+                                Color.clear.frame(width: 12, height: 1)
                             }
+                        }
+                        ForEach(0..<7, id: \.self) { col in
+                            let day = days[row * 7 + col]
+                            Group {
+                                if cal.isDate(day, equalTo: month, toGranularity: .month) {
+                                    Button { model.show(day, in: .day) } label: {
+                                        VStack(spacing: 0) {
+                                            // Narrower beside week numbers, so three months still fit across.
+                                            DayNumber(day: day, size: 9, circle: model.settings.weekNumbers ? 13.5 : 14)
+                                            if let dots { Dots(colors: dots[day] ?? [], size: 2.5) }
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(PressStyle())
+                                } else {
+                                    Color.clear.frame(height: dots == nil ? 14 : 16.5)
+                                }
+                            }
+                            // The full height of the row, so the weekend band has no gaps.
+                            .frame(maxHeight: .infinity)
+                            .weekend(cal.isDateInWeekend(day))
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/// Up to three dots under a day, in the colors of the calendars with events on it.
+struct Dots: View {
+    let colors: [Color]
+    let size: CGFloat
+
+    var body: some View {
+        HStack(spacing: size / 2) {
+            ForEach(Array(colors.prefix(3).enumerated()), id: \.offset) {
+                Circle().fill($0.element).frame(width: size, height: size)
+            }
+        }
+        .frame(height: size)
     }
 }
 
@@ -214,41 +268,43 @@ struct MonthView: View {
     var body: some View {
         let days = monthPage(model.date)
         let dots = events.colors(from: days[0], to: cal.date(byAdding: .day, value: 1, to: days[41])!)
-        Grid(horizontalSpacing: 0, verticalSpacing: 2) {
+        let weekNumbers = model.settings.weekNumbers
+        // No gaps between the rows, so the weekend's shading runs down as one band.
+        Grid(horizontalSpacing: 0, verticalSpacing: 0) {
             GridRow {
-                Color.clear.frame(width: 1, height: 1)
+                if weekNumbers { Color.clear.frame(width: 1, height: 1) }
                 ForEach(Array(weekdaySymbols(cal.shortStandaloneWeekdaySymbols).enumerated()), id: \.offset) {
                     Text($0.element)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 2)
+                        .weekend(cal.isDateInWeekend(days[$0.offset]))
                 }
             }
             ForEach(0..<6, id: \.self) { row in
                 GridRow(alignment: .top) {
-                    // A click on the week's number opens that week.
-                    Button { model.show(days[row * 7], in: .week) } label: {
-                        WeekNumber(day: days[row * 7])
+                    // Week numbers when Calendar shows them; a click opens that week.
+                    if weekNumbers {
+                        Button { model.show(days[row * 7], in: .week) } label: {
+                            WeekNumber(day: days[row * 7])
+                        }
+                        .buttonStyle(PressStyle())
+                        .padding(.top, 3)
                     }
-                    .buttonStyle(PressStyle())
-                    .padding(.top, 2)
                     ForEach(0..<7, id: \.self) { col in
                         let day = days[row * 7 + col]
                         Button { model.show(day, in: .day) } label: {
                             VStack(spacing: 2) {
                                 DayNumber(day: day, dimmed: !cal.isDate(day, equalTo: model.date, toGranularity: .month),
                                           circle: 26)
-                                HStack(spacing: 2) {
-                                    ForEach(Array((dots[day] ?? []).prefix(3).enumerated()), id: \.offset) {
-                                        Circle().fill($0.element).frame(width: 4, height: 4)
-                                    }
-                                }
-                                .frame(height: 4)
+                                Dots(colors: dots[day] ?? [], size: 4)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, 3)
                         }
                         .buttonStyle(PressStyle())
+                        .weekend(cal.isDateInWeekend(day))
                     }
                 }
             }
@@ -263,14 +319,15 @@ struct WeekView: View {
     private let events = Events.shared
 
     var body: some View {
-        let days = weekDays(model.date)
+        // Calendar's Days per week: 5 leaves the weekend out.
+        let days = weekDays(model.date).filter { model.settings.daysPerWeek == 7 || !cal.isDateInWeekend($0) }
         VStack(alignment: .leading, spacing: 0) {
             if !events.allowed { AccessButton().padding(.bottom, 8) }
             ForEach(days, id: \.self) { day in
                 Button { model.show(day, in: .day) } label: {
                     HStack(alignment: .top, spacing: 10) {
                         VStack(spacing: 0) {
-                            Text(day.formatted(.dateTime.weekday(.abbreviated)))
+                            Text(day.formatted(dateStyle.weekday(.abbreviated)))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                             DayNumber(day: day, size: 15, circle: 28)
@@ -295,6 +352,7 @@ struct WeekView: View {
                     .padding(.horizontal, 6)
                 }
                 .buttonStyle(PressStyle())
+                .weekend(cal.isDateInWeekend(day))
                 .padding(.horizontal, -6)
                 if day != days.last { Divider() }
             }

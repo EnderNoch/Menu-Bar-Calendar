@@ -58,6 +58,17 @@ final class Model {
 
     let s = Strings.for(Strings.detected)
 
+    /// Calendar's settings, read again each time the panel opens.
+    private(set) var settings = CalendarSettings.read()
+    private(set) var calendar = CalendarSettings.read().calendar
+
+    func refreshSettings() {
+        let now = CalendarSettings.read()
+        guard now != settings else { return }
+        settings = now
+        calendar = now.calendar
+    }
+
     private init() {
         scope = (UserDefaults.standard.object(forKey: "scope") as? Int).flatMap(Scope.init) ?? .month
     }
@@ -119,18 +130,16 @@ final class Model {
     var title: String {
         switch scope {
         case .day:
-            return date.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
+            return date.formatted(dateStyle.weekday(.wide).day().month(.wide).year())
         case .week:
             let week = cal.dateInterval(of: .weekOfYear, for: date)!
-            let f = DateIntervalFormatter()
-            f.dateStyle = .medium
-            f.timeStyle = .none
+            let f = DateIntervalFormatter(date: .medium, time: .none)
             let range = f.string(from: week.start, to: week.end.addingTimeInterval(-1))
             return String(format: sys("%@, Week %@"), range, "\(cal.component(.weekOfYear, from: date))")
         case .month:
-            return date.formatted(.dateTime.month(.wide).year())
+            return date.formatted(dateStyle.month(.wide).year())
         case .year:
-            return date.formatted(.dateTime.year())
+            return date.formatted(dateStyle.year())
         }
     }
 }

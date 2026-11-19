@@ -59,6 +59,12 @@ Requires macOS 26 or later on a Mac with Apple silicon.
   changes them or sends them anywhere.
 - **Keys as in Calendar.** ← and → go back and forward, `⌘ + T` goes to today, `⌘ + 1` to
   `⌘ + 4` switch between Day, Week, Month and Year.
+- **Calendar's settings apply here too.** Start week on, Days per week, Show week numbers (in
+  the month and in the year, where a click opens that week), Show events in year view (here a
+  dot under each day with events) and Turn on time zone support (with the zone chosen in
+  Calendar) are read from Calendar → Settings each time the panel opens; the app has no
+  switches of its own. Invitations you declined stay hidden, as in Calendar. Saturday and
+  Sunday sit on a shaded band, as in Calendar's week and month views.
 - **It opens on today.** Each time the panel opens it starts at today, in the view you used
   last.
 - **Opens at login.** It adds itself on the first launch. Switch it off in System Settings →
@@ -133,6 +139,13 @@ Wymaga macOS 26 lub nowszego i Maca z procesorem Apple.
   niczego nie zmienia ani nigdzie nie wysyła.
 - **Klawisze jak w Kalendarzu.** ← i → przechodzą wstecz i dalej, `⌘ + T` wraca do dzisiaj,
   `⌘ + 1` do `⌘ + 4` przełączają Dzień, Tydzień, Miesiąc i Rok.
+- **Ustawienia Kalendarza działają też tutaj.** Pierwszy dzień tygodnia, Dni w tygodniu,
+  Pokazuj numery tygodni (w miesiącu i w roku, gdzie kliknięcie otwiera ten tydzień), Pokazuj
+  wydarzenia w widoku roku (tu kropka pod każdym dniem z wydarzeniem) i Włącz obsługę stref
+  czasowych (ze strefą wybraną w Kalendarzu) są czytane z Kalendarz → Ustawienia przy każdym
+  otwarciu panelu; aplikacja nie ma własnych przełączników. Odrzucone zaproszenia są ukryte,
+  jak w Kalendarzu. Sobota i niedziela leżą na przyciemnionym pasie, jak w widokach tygodnia
+  i miesiąca w Kalendarzu.
 - **Otwiera się na dzisiaj.** Za każdym otwarciem panel zaczyna od dzisiejszego dnia, w widoku
   używanym ostatnio.
 - **Otwiera się przy logowaniu.** Dodaje się sama przy pierwszym uruchomieniu. Wyłączysz to
