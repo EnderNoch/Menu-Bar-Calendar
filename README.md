@@ -21,16 +21,19 @@ the app is named in the system's language: "Menu Bar Calendar", "Kalendarz na pa
 "Menüleisten-Kalender"…
 
 <p>
-  <img src="Screenshots/en-light.jpg" width="300" alt="Month, light appearance">
-  <img src="Screenshots/en-dark.jpg" width="300" alt="Month, dark appearance">
+  <img src="Screenshots/en-light-purple.jpg" width="200" alt="Light appearance, purple accent">
+  <img src="Screenshots/en-light-blue.jpg" width="200" alt="Light appearance, blue accent">
+  <img src="Screenshots/en-light-green.jpg" width="200" alt="Light appearance, green accent">
+  <img src="Screenshots/en-light-tinted.jpg" width="200" alt="Tinted glass">
 </p>
 <p>
-  <img src="Screenshots/en-light-year.jpg" width="300" alt="Year, light appearance">
-  <img src="Screenshots/en-dark-week.jpg" width="300" alt="Week, dark appearance">
+  <img src="Screenshots/en-dark-purple.jpg" width="200" alt="Dark appearance, purple accent">
+  <img src="Screenshots/en-dark-orange.jpg" width="200" alt="Dark appearance, orange accent">
+  <img src="Screenshots/en-dark-tinted.jpg" width="200" alt="Dark appearance, tinted glass">
 </p>
 
-*Month, year and week, in light and dark. More looks (accent colors, tinted glass) are in the
-[Polish section](#po-polsku).*
+*The look follows System Settings → Appearance: light and dark, the accent color and the Liquid
+Glass slider.*
 
 Tested on a MacBook Air with M5, macOS 27.
 
