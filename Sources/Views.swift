@@ -6,11 +6,10 @@ struct Panel: View {
     private let events = Events.shared
 
     var body: some View {
-        @Bindable var model = model
         let s = model.s
 
         VStack(alignment: .leading, spacing: 12) {
-            Picker(appName, selection: $model.scope) {
+            Picker(appName, selection: Binding(get: { model.scope }, set: { model.switchTo($0) })) {
                 ForEach(Scope.allCases) { Text($0.name).tag($0) }
             }
             .pickerStyle(.segmented)
@@ -23,6 +22,7 @@ struct Panel: View {
                     .font(.headline)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+                    .contentTransition(.interpolate)
                 Spacer(minLength: 4)
                 Button { model.step(-1) } label: { Image(systemName: "chevron.left") }
                     .keyboardShortcut(.leftArrow, modifiers: [])
@@ -35,12 +35,20 @@ struct Panel: View {
             }
             .controlSize(.small)
 
-            switch model.scope {
-            case .day: DayView()
-            case .week: WeekView()
-            case .month: MonthView()
-            case .year: YearView()
+            // One page at a time: the next slides in over the last, clipped at the panel's edges.
+            ZStack(alignment: .top) {
+                Group {
+                    switch model.scope {
+                    case .day: DayView()
+                    case .week: WeekView()
+                    case .month: MonthView()
+                    case .year: YearView()
+                    }
+                }
+                .id(model.page)
+                .transition(pageTransition)
             }
+            .clipped()
 
             Divider()
 
@@ -55,7 +63,7 @@ struct Panel: View {
         // ⌘1 to ⌘4 switch the view, as in Calendar.
         .background {
             ForEach(Scope.allCases) { scope in
-                Button(scope.name) { model.scope = scope }
+                Button(scope.name) { model.switchTo(scope) }
                     .keyboardShortcut(KeyEquivalent(Character("\(scope.rawValue + 1)")), modifiers: .command)
                     .opacity(0)
                     .accessibilityHidden(true)
@@ -63,27 +71,62 @@ struct Panel: View {
         }
         // Each time the panel opens it starts at today, like Calendar on launch.
         .onAppear {
-            model.goToday()
+            model.goToday(animated: false)
             events.refresh()
+        }
+    }
+
+    private var pageTransition: AnyTransition {
+        switch model.motion {
+        case .fade: .opacity
+        case .forward: .push(from: .trailing)
+        case .back: .push(from: .leading)
         }
     }
 }
 
-/// The day's number, in a filled circle of the accent color when it is today.
+/// The day's number, in a filled circle of the accent color when it is today. While it is
+/// pressed it turns white on the press highlight, and today's circle with it.
 struct DayNumber: View {
     let day: Date
     var dimmed = false
     var size: CGFloat = 13
     var circle: CGFloat = 24
+    @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
         let today = cal.isDate(day, inSameDayAs: Model.shared.today)
+        let pressed = prominence == .increased
+        let style: AnyShapeStyle = switch (today, pressed) {
+        case (true, true): AnyShapeStyle(.tint)
+        case (true, false), (false, true): AnyShapeStyle(.white)
+        case (false, false): dimmed ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary)
+        }
         Text("\(cal.component(.day, from: day))")
             .font(.system(size: size, weight: today ? .semibold : .regular))
             .monospacedDigit()
-            .foregroundStyle(today ? AnyShapeStyle(.white) : dimmed ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
+            .foregroundStyle(style)
             .frame(width: circle, height: circle)
-            .background { if today { Circle().fill(.tint) } }
+            .background { if today { Circle().fill(pressed ? AnyShapeStyle(.white) : AnyShapeStyle(.tint)) } }
+    }
+}
+
+/// A day or a week number as a button: while the mouse is down it lights up in the system's
+/// selection color, like an item in a Mac menu, and on release it opens.
+struct PressStyle: ButtonStyle {
+    var radius: CGFloat = 6
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .foregroundStyle(configuration.isPressed ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .environment(\.backgroundProminence, configuration.isPressed ? .increased : .standard)
+            .background {
+                if configuration.isPressed {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(Color(nsColor: .selectedContentBackgroundColor))
+                }
+            }
     }
 }
 
@@ -136,9 +179,8 @@ struct MiniMonth: View {
                                 Button { model.show(day, in: .day) } label: {
                                     DayNumber(day: day, size: 9, circle: 14)
                                         .frame(maxWidth: .infinity)
-                                        .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(PressStyle(radius: 3))
                             } else {
                                 Color.clear.frame(height: 14)
                             }
@@ -171,13 +213,17 @@ struct MonthView: View {
             }
             ForEach(0..<6, id: \.self) { row in
                 GridRow(alignment: .top) {
-                    // The week's number, as Calendar shows it with week numbers on.
-                    Text("\(cal.component(.weekOfYear, from: days[row * 7]))")
-                        .font(.caption2)
-                        .monospacedDigit()
-                        .foregroundStyle(.tertiary)
-                        .frame(width: 22, height: 26)
-                        .padding(.top, 2)
+                    // The week's number, as Calendar shows it with week numbers on; a click opens
+                    // that week.
+                    Button { model.show(days[row * 7], in: .week) } label: {
+                        Text("\(cal.component(.weekOfYear, from: days[row * 7]))")
+                            .font(.caption2)
+                            .monospacedDigit()
+                            .foregroundStyle(.tertiary)
+                            .frame(width: 22, height: 26)
+                    }
+                    .buttonStyle(PressStyle())
+                    .padding(.top, 2)
                     ForEach(0..<7, id: \.self) { col in
                         let day = days[row * 7 + col]
                         Button { model.show(day, in: .day) } label: {
@@ -193,9 +239,8 @@ struct MonthView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 2)
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PressStyle())
                     }
                 }
             }
@@ -239,9 +284,10 @@ struct WeekView: View {
                         Spacer(minLength: 0)
                     }
                     .padding(.vertical, 4)
-                    .contentShape(Rectangle())
+                    .padding(.horizontal, 6)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle())
+                .padding(.horizontal, -6)
                 if day != days.last { Divider() }
             }
         }

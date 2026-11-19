@@ -51,8 +51,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 	<key>CFBundleIconName</key><string>MenuBarCalendar</string>
 	<key>CFBundleIdentifier</key><string>$ID</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>1.0</string>
-	<key>CFBundleVersion</key><string>1</string>
+	<key>CFBundleShortVersionString</key><string>1.1</string>
+	<key>CFBundleVersion</key><string>2</string>
 	<key>LSMinimumSystemVersion</key><string>26.0</string>
 	<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
 	<key>NSHighResolutionCapable</key><true/>
@@ -154,6 +154,6 @@ touch "/Applications/$APP"
 # a copy that was running comes back as the new version, like a restart
 if [ "$RUNNING" = 1 ]; then
 	echo "› reopening"
-	open "/Applications/$APP"
+	open -g "/Applications/$APP"
 fi
 echo "› done: /Applications/$APP"

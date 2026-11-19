@@ -1,5 +1,5 @@
-import Foundation
 import Observation
+import SwiftUI
 
 /// The four views of the system's Calendar, in its order (⌘1 to ⌘4 there and here).
 enum Scope: Int, CaseIterable, Identifiable {
@@ -47,7 +47,12 @@ final class Model {
         didSet { UserDefaults.standard.set(scope.rawValue, forKey: "scope") }
     }
     /// The day, week, month or year on screen: any day inside it.
-    var date = Date()
+    private(set) var date = Date()
+    /// How the last change moves the page: a new view fades in, the next or previous period
+    /// slides in from its side, like Calendar's pages.
+    private(set) var motion = Motion.fade
+
+    enum Motion { case fade, forward, back }
     /// Changes at midnight, so the circle moves on while the app keeps running.
     private(set) var today = Date()
 
@@ -65,19 +70,49 @@ final class Model {
         }
     }
 
+    /// The page on screen: its view and the start of its period. When it changes, the page
+    /// moves.
+    var page: Page { Page(scope: scope, start: cal.dateInterval(of: scope.unit, for: date)!.start) }
+
+    struct Page: Hashable {
+        let scope: Scope
+        let start: Date
+    }
+
+    private static let animation = Animation.snappy(duration: 0.3)
+
     func step(_ n: Int) {
-        date = cal.date(byAdding: scope.unit, value: n, to: date) ?? date
+        go(to: cal.date(byAdding: scope.unit, value: n, to: date) ?? date)
     }
 
-    func goToday() {
+    /// The Today button and ⌘T slide to today; opening the panel just starts there.
+    func goToday(animated: Bool = true) {
         today = Date()
-        date = today
+        if animated { go(to: today) } else { motion = .fade; date = today }
     }
 
-    /// A click on a day or a month name: that day or month in its own view.
+    /// A click on a day, a week number or a month's name: that day, week or month in its own
+    /// view.
     func show(_ day: Date, in scope: Scope) {
-        date = day
-        self.scope = scope
+        motion = .fade
+        withAnimation(Self.animation) {
+            date = day
+            self.scope = scope
+        }
+    }
+
+    /// The view picker and ⌘1 to ⌘4.
+    func switchTo(_ scope: Scope) {
+        guard scope != self.scope else { return }
+        motion = .fade
+        withAnimation(Self.animation) { self.scope = scope }
+    }
+
+    private func go(to day: Date) {
+        if !cal.isDate(day, equalTo: date, toGranularity: scope.unit) {
+            motion = day > date ? .forward : .back
+        }
+        withAnimation(Self.animation) { date = day }
     }
 
     /// The title above the calendar, in the system's date format.
