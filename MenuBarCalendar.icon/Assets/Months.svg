@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="g" x1="512" y1="371" x2="512" y2="789" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C9C7CF"/>
+      <stop offset="1" stop-color="#A9A6B2"/>
+    </linearGradient>
+  </defs>
+  <rect x="228" y="371" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="378" y="371" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="528" y="371" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="678" y="371" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="228" y="521" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="378" y="521" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="678" y="521" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="228" y="671" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="378" y="671" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="528" y="671" width="118" height="118" rx="30" fill="url(#g)"/>
+  <rect x="678" y="671" width="118" height="118" rx="30" fill="url(#g)"/>
+</svg>
