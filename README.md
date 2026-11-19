@@ -9,7 +9,7 @@ panel opens with the same four views as Calendar: **Day**, **Week**, **Month** a
 The month shows week numbers and a dot under each day with an event, in the color of its
 calendar; the week and the day list the events with their times. A click on a day opens it
 in the day view, a week number opens that week, a month's name in the year opens that month;
-while pressed, each lights up in the selection color like an item in a Mac menu. The next or
+while pressed, a day or week number gets the same circle as today's date. The next or
 previous page slides in from its side.
 
 **Open Calendar** at the bottom opens the calendar app you chose in Calendar → Settings →
@@ -84,7 +84,7 @@ z tymi samymi czterema widokami co w Kalendarzu: **Dzień**, **Tydzień**, **Mie
 **Rok**. Miesiąc pokazuje numery tygodni i kropkę pod każdym dniem z wydarzeniem, w kolorze
 jego kalendarza; tydzień i dzień wypisują wydarzenia z godzinami. Kliknięcie dnia otwiera go
 w widoku dnia, numer tygodnia otwiera ten tydzień, a nazwa miesiąca w widoku roku ten miesiąc;
-w chwili kliknięcia każdy z nich podświetla się kolorem zaznaczenia, jak pozycja w menu Maca.
+w chwili kliknięcia dzień albo numer tygodnia dostaje takie samo kółko jak dzisiejsza data.
 Następna albo poprzednia strona wsuwa się ze swojej strony.
 
 **Otwórz Kalendarz** na dole otwiera aplikację kalendarza wybraną w Kalendarz → Ustawienia →

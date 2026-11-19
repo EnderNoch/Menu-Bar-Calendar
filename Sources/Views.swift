@@ -76,8 +76,11 @@ struct Panel: View {
         }
     }
 
+    /// With Reduce Motion on (System Settings → Accessibility → Display) pages fade instead
+    /// of sliding, as Apple's own apps do.
     private var pageTransition: AnyTransition {
-        switch model.motion {
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { return .opacity }
+        return switch model.motion {
         case .fade: .opacity
         case .forward: .push(from: .trailing)
         case .back: .push(from: .leading)
@@ -85,8 +88,8 @@ struct Panel: View {
     }
 }
 
-/// The day's number, in a filled circle of the accent color when it is today. While it is
-/// pressed it turns white on the press highlight, and today's circle with it.
+/// The day's number, in a filled circle of the accent color when it is today. A pressed day
+/// gets the same circle, and today's turns a shade darker, so the click shows where it lands.
 struct DayNumber: View {
     let day: Date
     var dimmed = false
@@ -97,36 +100,46 @@ struct DayNumber: View {
     var body: some View {
         let today = cal.isDate(day, inSameDayAs: Model.shared.today)
         let pressed = prominence == .increased
-        let style: AnyShapeStyle = switch (today, pressed) {
-        case (true, true): AnyShapeStyle(.tint)
-        case (true, false), (false, true): AnyShapeStyle(.white)
-        case (false, false): dimmed ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary)
-        }
+        let filled = today || pressed
         Text("\(cal.component(.day, from: day))")
-            .font(.system(size: size, weight: today ? .semibold : .regular))
+            .font(.system(size: size, weight: filled ? .semibold : .regular))
             .monospacedDigit()
-            .foregroundStyle(style)
+            .foregroundStyle(filled ? AnyShapeStyle(.white) : dimmed ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
             .frame(width: circle, height: circle)
-            .background { if today { Circle().fill(pressed ? AnyShapeStyle(.white) : AnyShapeStyle(.tint)) } }
+            .background {
+                if filled {
+                    Circle().fill(.tint)
+                    if today && pressed { Circle().fill(.black.opacity(0.2)) }
+                }
+            }
     }
 }
 
-/// A day or a week number as a button: while the mouse is down it lights up in the system's
-/// selection color, like an item in a Mac menu, and on release it opens.
+/// Days and week numbers as buttons: while the mouse is down they light up in the circle of
+/// today's date (drawn by DayNumber and WeekNumber), and on release they open.
 struct PressStyle: ButtonStyle {
-    var radius: CGFloat = 6
-
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())
-            .foregroundStyle(configuration.isPressed ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
             .environment(\.backgroundProminence, configuration.isPressed ? .increased : .standard)
-            .background {
-                if configuration.isPressed {
-                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                        .fill(Color(nsColor: .selectedContentBackgroundColor))
-                }
-            }
+    }
+}
+
+/// The week's number beside the month, as Calendar shows it with week numbers on; pressed,
+/// it gets the circle too.
+struct WeekNumber: View {
+    let day: Date
+    @Environment(\.backgroundProminence) private var prominence
+
+    var body: some View {
+        let pressed = prominence == .increased
+        Text("\(cal.component(.weekOfYear, from: day))")
+            .font(.caption2.weight(pressed ? .semibold : .regular))
+            .monospacedDigit()
+            .foregroundStyle(pressed ? AnyShapeStyle(.white) : AnyShapeStyle(.tertiary))
+            .frame(width: 20, height: 20)
+            .background { if pressed { Circle().fill(.tint) } }
+            .frame(width: 22, height: 26)
     }
 }
 
@@ -180,7 +193,7 @@ struct MiniMonth: View {
                                     DayNumber(day: day, size: 9, circle: 14)
                                         .frame(maxWidth: .infinity)
                                 }
-                                .buttonStyle(PressStyle(radius: 3))
+                                .buttonStyle(PressStyle())
                             } else {
                                 Color.clear.frame(height: 14)
                             }
@@ -213,14 +226,9 @@ struct MonthView: View {
             }
             ForEach(0..<6, id: \.self) { row in
                 GridRow(alignment: .top) {
-                    // The week's number, as Calendar shows it with week numbers on; a click opens
-                    // that week.
+                    // A click on the week's number opens that week.
                     Button { model.show(days[row * 7], in: .week) } label: {
-                        Text("\(cal.component(.weekOfYear, from: days[row * 7]))")
-                            .font(.caption2)
-                            .monospacedDigit()
-                            .foregroundStyle(.tertiary)
-                            .frame(width: 22, height: 26)
+                        WeekNumber(day: days[row * 7])
                     }
                     .buttonStyle(PressStyle())
                     .padding(.top, 2)
