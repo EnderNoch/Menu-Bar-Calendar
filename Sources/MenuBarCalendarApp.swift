@@ -38,13 +38,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-/// The system's own calendar symbol. Holding ⌘ over it, or VoiceOver, reads today's date.
+/// The system's own calendar symbol. Holding ⌘ over it, or VoiceOver, reads today's date
+/// alone, like the clock reads the time: the app's long name in front of it says nothing the
+/// icon doesn't.
 struct MenuBarLabel: View {
     private let model = Model.shared
 
     var body: some View {
+        let date = model.today.formatted(dateStyle.weekday(.wide).day().month(.wide).year())
+        // Starting with a capital, as the menu bar clock does ("Pt. 20 lis"): Polish and other
+        // languages write weekdays in lower case mid-sentence.
         Image(systemName: "calendar")
-            .accessibilityLabel(appName + ", " + model.today.formatted(dateStyle.weekday(.wide).day().month(.wide).year()))
+            .accessibilityLabel(date.prefix(1).uppercased(with: .current) + date.dropFirst())
     }
 }
 
