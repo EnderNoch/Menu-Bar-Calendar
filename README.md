@@ -41,7 +41,7 @@ Tested on a MacBook Air with M5, macOS 27.
 
 ## Install
 
-1. Download [Menu-Bar-Calendar.zip](https://github.com/EnderNoch/Menu-Bar-Calendar/raw/main/Menu-Bar-Calendar.zip)
+1. Download [Menu-Bar-Calendar.zip](https://github.com/EnderNoch/Menu-Bar-Calendar/releases/latest/download/Menu-Bar-Calendar.zip)
    and unzip it (double-click).
 2. Drag `Menu Bar Calendar.app` into Applications and open it. A calendar icon appears in the
    menu bar. There is no window and no Dock icon.
@@ -121,7 +121,7 @@ Testowane na MacBooku Air z M5, macOS 27.
 
 ### Instalacja
 
-1. Pobierz [Menu-Bar-Calendar.zip](https://github.com/EnderNoch/Menu-Bar-Calendar/raw/main/Menu-Bar-Calendar.zip)
+1. Pobierz [Menu-Bar-Calendar.zip](https://github.com/EnderNoch/Menu-Bar-Calendar/releases/latest/download/Menu-Bar-Calendar.zip)
    i rozpakuj go (dwuklik).
 2. Przeciągnij `Menu Bar Calendar.app` do folderu Aplikacje i otwórz. Na pasku menu pojawi się
    ikona kalendarza. Nie ma okna ani ikony w Docku.
